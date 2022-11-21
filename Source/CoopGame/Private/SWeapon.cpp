@@ -4,6 +4,7 @@
 #include "SWeapon.h"
 #include "HAL/IConsoleManager.h"
 #include "DrawDebugHelpers.h"
+
 #include "Kismet/GameplayStatics.h"
 
 
@@ -44,24 +45,41 @@ void ASWeapon::Fire()
 	QueryParams.bTraceComplex = true;
 
 	FHitResult HitResult;
-	if (GetWorld()->LineTraceSingleByChannel(HitResult, EyeLocation, TraceEnd, ECC_Visibility))
+	if (GetWorld()->LineTraceSingleByChannel(HitResult, EyeLocation, TraceEnd, ECC_Visibility) || !HitResult.
+		bBlockingHit)
 	{
 		AActor* HitActor = HitResult.GetActor();
-		UGameplayStatics::ApplyPointDamage(HitActor, 20.0f, ShotDir, HitResult, MyOwner->GetInstigatorController(),
-
-		                                   this, DamageType);
 		if (DebugWeaponDrawing > 0)
 		{
 			DrawDebugLine(GetWorld(), EyeLocation, TraceEnd, FColor::Cyan, false, 1.0f, 0, 1.0f);
 		}
-		if (ImpactEffect)
-			UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), ImpactEffect, HitResult.ImpactPoint,
-			                                         HitResult.ImpactNormal.Rotation());
+		if (HitResult.bBlockingHit)
+		{
+			UGameplayStatics::ApplyPointDamage(HitActor, 20.0f, ShotDir, HitResult, MyOwner->GetInstigatorController(),
+
+			                                   this, DamageType);
+			if (ImpactEffect)
+				UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), ImpactEffect, HitResult.ImpactPoint,
+				                                         HitResult.ImpactNormal.Rotation());
+		}
+		PlayFireEffects();
+		PlayerCameraShake();
 	}
+}
 
-
+void ASWeapon::PlayFireEffects()
+{
 	if (MuzzleEffect)
 	{
 		UGameplayStatics::SpawnEmitterAttached(MuzzleEffect, MeshComponent, MuzzleSocketName);
 	}
+}
+
+void ASWeapon::PlayerCameraShake()
+{
+	APawn* MyOwner = Cast<APawn>(GetOwner());
+	if (!MyOwner) return;
+	APlayerController* PlayerController = Cast<APlayerController>(MyOwner->GetController());
+	if (!PlayerController)return;
+	PlayerController->ClientPlayCameraShake(FireCamShake);
 }

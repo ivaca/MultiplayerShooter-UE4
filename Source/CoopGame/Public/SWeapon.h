@@ -17,8 +17,6 @@ public:
 	ASWeapon();
 
 protected:
-
-
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Weapon")
 	USkeletalMeshComponent* MeshComponent;
 
@@ -35,12 +33,16 @@ protected:
 	UPROPERTY(VisibleDefaultsOnly, Category="Weapon")
 	FName MuzzleSocketName;
 
-	
-	
+
+	UPROPERTY(EditDefaultsOnly, Category="Weapon")
+	TSubclassOf<UCameraShakeBase> FireCamShake;
+
+
+	void PlayFireEffects();
+
+	void PlayerCameraShake();
 public:
 	// Called every frame
 	UFUNCTION(BlueprintCallable, Category="weapon")
 	virtual void Fire();
-	
-	
 };
