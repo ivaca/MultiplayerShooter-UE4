@@ -3,6 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "SHealthComponent.h"
 #include "SWeapon.h"
 
 #include "GameFramework/Character.h"
@@ -31,7 +32,8 @@ protected:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Components")
 	USpringArmComponent* SpringArmComponent;
-
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Components")
+	USHealthComponent* HealthCompon;
 
 	UPROPERTY(EditAnywhere, Category="Components")
 	TSubclassOf<ASWeapon> WeaponClass;
@@ -39,22 +41,34 @@ protected:
 	UPROPERTY(BlueprintReadOnly)
 	ASWeapon* PlayerWeapon;
 
-	void BeginCrouch();
-	void EndCrouch();
-
+	
 	bool bWantsToZoom;
 
-	UPROPERTY(EditDefaultsOnly,Category="Player")
+	UPROPERTY(EditDefaultsOnly, Category="Player")
 	float ZoomedFOV;
 
-	UPROPERTY(EditDefaultsOnly,Category="Player", meta=(ClampMin=0.1, ClampMax=100.0))
+	UPROPERTY(EditDefaultsOnly, Category="Player", meta=(ClampMin=0.1, ClampMax=100.0))
 	float ZoomInterpSpeed;
 
 	float DefaultFOV;
 
+	
+
+	UFUNCTION()
+	void OnHealthChanged(class USHealthComponent* HealthComponent, float Health, float
+	                     HealthDelta, const class UDamageType* DamageType,
+	                     class AController* InstigatedBy, AActor* DamageCauser);
+	
+	UPROPERTY(BlueprintReadOnly, Category="Player")
+	bool bDied;
+
+
+	void BeginCrouch();
+	void EndCrouch();
+
 	void EndADS();
 	void BeginADS();
-
+	
 	void StartFire();
 	void StopFire();
 public:

@@ -20,11 +20,15 @@ ASCharacter::ASCharacter()
 	SpringArmComponent->bUsePawnControlRotation = true;
 	SpringArmComponent->SetupAttachment(RootComponent);
 
+	HealthCompon = CreateDefaultSubobject<USHealthComponent>("HealthCompon");
+
 	GetMovementComponent()->GetNavAgentPropertiesRef().bCanCrouch = true;
 
 	CameraComponent = CreateDefaultSubobject<UCameraComponent>(TEXT("CameraComponent"));
 	CameraComponent->SetupAttachment(SpringArmComponent);
 	GetCapsuleComponent()->SetCollisionResponseToChannel(COLLISION_WEAPON, ECR_Ignore);
+
+	HealthCompon->OnHealthChange.AddDynamic(this, &ASCharacter::OnHealthChanged);
 }
 
 // Called when the game starts or when spawned
@@ -93,6 +97,7 @@ void ASCharacter::BeginADS()
 	bWantsToZoom = true;
 }
 
+
 void ASCharacter::StartFire()
 {
 	if (PlayerWeapon)
@@ -111,6 +116,20 @@ FVector ASCharacter::GetPawnViewLocation() const
 		return CameraComponent->GetComponentLocation();
 
 	return Super::GetPawnViewLocation();
+}
+
+void ASCharacter::OnHealthChanged(USHealthComponent* HealthComponent, float Health, float HealthDelta,
+                                  const UDamageType* DamageType, AController* InstigatedBy, AActor* DamageCauser)
+{
+	if (Health <= 0.0f && !bDied)
+	{
+		bDied = true;
+		GetMovementComponent()->StopMovementImmediately();
+		GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+
+		DetachFromControllerPendingDestroy();
+		SetLifeSpan(10.0f);
+	}
 }
 
 void ASCharacter::BeginCrouch()
