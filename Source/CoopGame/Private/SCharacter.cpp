@@ -8,7 +8,6 @@
 #include "GameFramework/SpringArmComponent.h"
 
 
-
 // Sets default values
 ASCharacter::ASCharacter()
 {
@@ -29,11 +28,10 @@ ASCharacter::ASCharacter()
 void ASCharacter::BeginPlay()
 {
 	Super::BeginPlay();
-	PlayerWeapon = GetWorld()->SpawnActor(WeaponClass);
+	PlayerWeapon = Cast<ASWeapon>(GetWorld()->SpawnActor(WeaponClass));
 	PlayerWeapon->SetOwner(this);
 	PlayerWeapon->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetIncludingScale,
 	                                FName("weapon_socket"));
-
 	DefaultFOV = CameraComponent->FieldOfView;
 }
 
@@ -77,9 +75,9 @@ void ASCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponen
 	PlayerInputComponent->BindAction("ADS", IE_Pressed, this, &ASCharacter::BeginADS);
 	PlayerInputComponent->BindAction("ADS", IE_Released, this, &ASCharacter::EndADS);
 
-	
-	
-	PlayerInputComponent->BindAction("Fire", IE_Pressed, this, &ASCharacter::Fire);
+
+	PlayerInputComponent->BindAction("Fire", IE_Pressed, this, &ASCharacter::StartFire);
+	PlayerInputComponent->BindAction("Fire", IE_Released, this, &ASCharacter::StopFire);
 }
 
 void ASCharacter::EndADS()
@@ -92,12 +90,16 @@ void ASCharacter::BeginADS()
 	bWantsToZoom = true;
 }
 
-void ASCharacter::Fire()
+void ASCharacter::StartFire()
 {
-	ASWeapon* CastedWeapon = Cast<ASWeapon>(PlayerWeapon);
-	if (!CastedWeapon)
-		UE_LOG(LogTemp, Error, TEXT("No Casted Weap"));
-	CastedWeapon->Fire();
+	if (PlayerWeapon)
+		PlayerWeapon->StartFire();
+}
+
+void ASCharacter::StopFire()
+{
+	if (PlayerWeapon)
+		PlayerWeapon->StopFire();
 }
 
 FVector ASCharacter::GetPawnViewLocation() const

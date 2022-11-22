@@ -28,7 +28,10 @@ protected:
 	UParticleSystem* MuzzleEffect;
 
 	UPROPERTY(EditDefaultsOnly, Category="Weapon")
-	UParticleSystem* ImpactEffect;
+	UParticleSystem* DefaultImpactEffect;
+
+	UPROPERTY(EditDefaultsOnly, Category="Weapon")
+	UParticleSystem* FleshImpactEffect;
 
 	UPROPERTY(VisibleDefaultsOnly, Category="Weapon")
 	FName MuzzleSocketName;
@@ -37,12 +40,34 @@ protected:
 	UPROPERTY(EditDefaultsOnly, Category="Weapon")
 	TSubclassOf<UCameraShakeBase> FireCamShake;
 
+	UPROPERTY(EditDefaultsOnly, Category="Weapon")
+	float BaseDamage;
 
+	UPROPERTY(EditDefaultsOnly, Category="Weapon")
+	float HeadshotDamageModifier;
+	
+	UPROPERTY(EditDefaultsOnly, Category="Weapon")
+	float FireRate;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category="Weapon")
+	float BulletSpread;
+	
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category="Weapon")
+	float BulletSpreadInterpSpeed;
+	
+	float CurrentBulletSpread;
 	void PlayFireEffects();
 
 	void PlayerCameraShake();
-public:
-	// Called every frame
-	UFUNCTION(BlueprintCallable, Category="weapon")
+
 	virtual void Fire();
+	FTimerHandle TH_AutomaticFireTimer;
+public:
+	
+	
+
+
+	virtual void StartFire();
+
+	virtual void StopFire();
 };

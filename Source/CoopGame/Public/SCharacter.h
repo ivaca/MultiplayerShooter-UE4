@@ -37,7 +37,7 @@ protected:
 	TSubclassOf<ASWeapon> WeaponClass;
 
 	UPROPERTY(BlueprintReadOnly)
-	AActor* PlayerWeapon;
+	ASWeapon* PlayerWeapon;
 
 	void BeginCrouch();
 	void EndCrouch();
@@ -55,7 +55,8 @@ protected:
 	void EndADS();
 	void BeginADS();
 
-	void Fire();
+	void StartFire();
+	void StopFire();
 public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
