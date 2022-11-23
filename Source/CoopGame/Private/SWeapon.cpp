@@ -31,11 +31,18 @@ ASWeapon::ASWeapon()
 	CurrentBulletSpread = 0.0f;
 	BulletSpread = 1.5f;
 	BulletSpreadInterpSpeed = 1.0f;
+
+	SetReplicates(true);
 }
 
 
 void ASWeapon::Fire()
 {
+	if (GetLocalRole() < ROLE_Authority)
+	{
+		ServerFire();
+		
+	}
 	AActor* MyOwner = GetOwner();
 	if (!MyOwner) return;
 
@@ -104,7 +111,16 @@ void ASWeapon::Fire()
 	}
 	CurrentBulletSpread = FMath::FInterpTo(CurrentBulletSpread, BulletSpread, GetWorld()->DeltaTimeSeconds,
 	                                       BulletSpreadInterpSpeed);
-	UE_LOG(LogTemp, Error, TEXT("%f"), CurrentBulletSpread);
+}
+
+void ASWeapon::ServerFire_Implementation()
+{
+	Fire();
+}
+
+bool ASWeapon::ServerFire_Validate()
+{
+	return true;
 }
 
 void ASWeapon::StartFire()

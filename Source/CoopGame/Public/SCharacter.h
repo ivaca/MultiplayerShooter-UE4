@@ -38,7 +38,7 @@ protected:
 	UPROPERTY(EditAnywhere, Category="Components")
 	TSubclassOf<ASWeapon> WeaponClass;
 
-	UPROPERTY(BlueprintReadOnly)
+	UPROPERTY(Replicated)
 	ASWeapon* PlayerWeapon;
 
 	
@@ -71,6 +71,8 @@ protected:
 	
 	void StartFire();
 	void StopFire();
+
+	
 public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;

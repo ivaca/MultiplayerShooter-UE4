@@ -8,6 +8,7 @@
 #include "CoopGame/CoopGame.h"
 #include "GameFramework/PawnMovementComponent.h"
 #include "GameFramework/SpringArmComponent.h"
+#include "Net/UnrealNetwork.h"
 
 
 // Sets default values
@@ -27,19 +28,24 @@ ASCharacter::ASCharacter()
 	CameraComponent = CreateDefaultSubobject<UCameraComponent>(TEXT("CameraComponent"));
 	CameraComponent->SetupAttachment(SpringArmComponent);
 	GetCapsuleComponent()->SetCollisionResponseToChannel(COLLISION_WEAPON, ECR_Ignore);
-
-	HealthCompon->OnHealthChange.AddDynamic(this, &ASCharacter::OnHealthChanged);
 }
 
 // Called when the game starts or when spawned
 void ASCharacter::BeginPlay()
 {
 	Super::BeginPlay();
-	PlayerWeapon = Cast<ASWeapon>(GetWorld()->SpawnActor(WeaponClass));
-	PlayerWeapon->SetOwner(this);
-	PlayerWeapon->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetIncludingScale,
-	                                FName("weapon_socket"));
 	DefaultFOV = CameraComponent->FieldOfView;
+	HealthCompon->OnHealthChange.AddDynamic(this, &ASCharacter::OnHealthChanged);
+
+
+	if (GetLocalRole() == ROLE_Authority)
+	{
+		PlayerWeapon = Cast<ASWeapon>(GetWorld()->SpawnActor(WeaponClass));
+		PlayerWeapon->SpawnCollisionHandlingMethod = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+		PlayerWeapon->SetOwner(this);
+		PlayerWeapon->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetIncludingScale,
+		                                FName("weapon_socket"));
+	}
 }
 
 void ASCharacter::MoveForward(float Value)
@@ -142,4 +148,10 @@ void ASCharacter::EndCrouch()
 {
 	UE_LOG(LogTemp, Warning, TEXT("UnCrouch"));
 	UnCrouch();
+}
+
+void ASCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+	DOREPLIFETIME(ASCharacter, PlayerWeapon);
 }

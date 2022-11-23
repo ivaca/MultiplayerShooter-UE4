@@ -45,28 +45,28 @@ protected:
 
 	UPROPERTY(EditDefaultsOnly, Category="Weapon")
 	float HeadshotDamageModifier;
-	
+
 	UPROPERTY(EditDefaultsOnly, Category="Weapon")
 	float FireRate;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category="Weapon")
 	float BulletSpread;
-	
+
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category="Weapon")
 	float BulletSpreadInterpSpeed;
-	
+
 	float CurrentBulletSpread;
 	void PlayFireEffects();
 
 	void PlayerCameraShake();
 
 	virtual void Fire();
+	
+	UFUNCTION(Server, Reliable, WithValidation)
+	void ServerFire();
+	
 	FTimerHandle TH_AutomaticFireTimer;
 public:
-	
-	
-
-
 	virtual void StartFire();
 
 	virtual void StopFire();
