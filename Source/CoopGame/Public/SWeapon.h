@@ -7,6 +7,19 @@
 #include "SWeapon.generated.h"
 
 class USkeletalMeshComponent;
+
+//info about single hitscan weapon linetrace
+USTRUCT()
+struct FHitScanTrace
+{
+	GENERATED_BODY()
+public:
+	UPROPERTY()
+	TEnumAsByte<EPhysicalSurface> SurfaceType;
+	
+	UPROPERTY()
+	FVector_NetQuantize TraceEnd;
+};
 UCLASS()
 class COOPGAME_API ASWeapon : public AActor
 {
@@ -24,6 +37,8 @@ protected:
 	TSubclassOf<UDamageType> DamageType;
 
 
+	void PlayImpactEffects(EPhysicalSurface SurfaceType, FVector ImpactPoint);
+	
 	UPROPERTY(EditDefaultsOnly, Category="Weapon")
 	UParticleSystem* MuzzleEffect;
 
@@ -66,6 +81,12 @@ protected:
 	void ServerFire();
 	
 	FTimerHandle TH_AutomaticFireTimer;
+
+	UPROPERTY(ReplicatedUsing=OnRep_HitScanTrace)
+	FHitScanTrace HitScanTrace;
+
+	UFUNCTION()
+	void OnRep_HitScanTrace();
 public:
 	virtual void StartFire();
 
