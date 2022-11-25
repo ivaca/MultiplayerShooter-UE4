@@ -39,9 +39,14 @@ protected:
 	UPROPERTY(EditDefaultsOnly, Category="Barrel")
 	UParticleSystem* ExplosionEffect;
 
+	UPROPERTY(ReplicatedUsing=OnRep_IsDead)
 	float bIsDead;
+
+	UFUNCTION()
+	void OnRep_IsDead();
+	
 	UFUNCTION()
 	void OnHealthChanged(USHealthComponent* HealthComponent, float Health, float HealthDelta,
 	                     const UDamageType* DamageType, AController* InstigatedBy, AActor* DamageCauser);
-public:
+
 };

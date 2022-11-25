@@ -7,9 +7,10 @@
 #include "SHealthComponent.generated.h"
 
 
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_SixParams(FOnHealthChangedSignature,  class USHealthComponent*, HealthComponent, float, Health, float,
-                           HealthDelta, const class UDamageType*, DamageType,
-                           class AController*, InstigatedBy, AActor*, DamageCauser);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_SixParams(FOnHealthChangedSignature, class USHealthComponent*, HealthComponent,
+                                             float, Health, float,
+                                             HealthDelta, const class UDamageType*, DamageType,
+                                             class AController*, InstigatedBy, AActor*, DamageCauser);
 
 UCLASS(ClassGroup=(COOP), meta=(BlueprintSpawnableComponent))
 class COOPGAME_API USHealthComponent : public UActorComponent
@@ -24,9 +25,12 @@ protected:
 	// Called when the game starts
 	virtual void BeginPlay() override;
 
-	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category="HealthComp")
+	UPROPERTY(ReplicatedUsing=OnRep_Health, BlueprintReadOnly, EditDefaultsOnly, Category="HealthComp")
 	float Health;
-	
+
+	UFUNCTION()
+	void OnRep_Health(float OldHealth);
+
 	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category="HealthComp")
 	float DefaultHealth;
 	UFUNCTION()
@@ -34,5 +38,5 @@ protected:
 	                         class AController* InstigatedBy, AActor* DamageCauser);
 public:
 	UPROPERTY(BlueprintAssignable, Category="Health Events")
-	FOnHealthChangedSignature OnHealthChange;
+	FOnHealthChangedSignature OnHealthChanged;
 };

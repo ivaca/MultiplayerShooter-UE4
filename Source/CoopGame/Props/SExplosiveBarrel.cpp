@@ -4,6 +4,7 @@
 #include "SExplosiveBarrel.h"
 
 #include "Kismet/GameplayStatics.h"
+#include "Net/UnrealNetwork.h"
 
 // Sets default values
 ASExplosiveBarrel::ASExplosiveBarrel()
@@ -18,8 +19,15 @@ ASExplosiveBarrel::ASExplosiveBarrel()
 	RadialForceComponent->bAutoActivate = false;
 
 	HealthComp = CreateDefaultSubobject<USHealthComponent>("HealthComponent");
-	HealthComp->OnHealthChange.AddDynamic(this, &ASExplosiveBarrel::OnHealthChanged);
 	bIsDead = false;
+	if (GetLocalRole() == ROLE_Authority)
+	{
+		HealthComp->OnHealthChanged.AddDynamic(this, &ASExplosiveBarrel::OnHealthChanged);
+	}
+
+
+	SetReplicates(true);
+	SetReplicateMovement(true);
 }
 
 // Called when the game starts or when spawned
@@ -28,16 +36,27 @@ void ASExplosiveBarrel::BeginPlay()
 	Super::BeginPlay();
 }
 
+void ASExplosiveBarrel::OnRep_IsDead()
+{
+	StaticMesh->SetMaterial(0, ExplodedBarrelMaterial);
+	UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), ExplosionEffect, GetActorLocation());
+}
+
 void ASExplosiveBarrel::OnHealthChanged(USHealthComponent* HealthComponent, float Health, float HealthDelta,
                                         const UDamageType* DamageType, AController* InstigatedBy, AActor* DamageCauser)
 {
 	if (Health <= 0.0f && !bIsDead)
 	{
 		bIsDead = true;
-		StaticMesh->SetMaterial(0, ExplodedBarrelMaterial);
+		OnRep_IsDead();
 		const FVector ImpulseDirection = FVector::UpVector * ExplosionImpulse;
 		StaticMesh->AddImpulse(ImpulseDirection, NAME_None, true);
-		UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), ExplosionEffect, GetActorLocation());
 		RadialForceComponent->FireImpulse();
 	}
+}
+
+void ASExplosiveBarrel::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+	DOREPLIFETIME(ASExplosiveBarrel, bIsDead);
 }

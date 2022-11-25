@@ -28,6 +28,7 @@ ASCharacter::ASCharacter()
 	CameraComponent = CreateDefaultSubobject<UCameraComponent>(TEXT("CameraComponent"));
 	CameraComponent->SetupAttachment(SpringArmComponent);
 	GetCapsuleComponent()->SetCollisionResponseToChannel(COLLISION_WEAPON, ECR_Ignore);
+	
 }
 
 // Called when the game starts or when spawned
@@ -35,7 +36,7 @@ void ASCharacter::BeginPlay()
 {
 	Super::BeginPlay();
 	DefaultFOV = CameraComponent->FieldOfView;
-	HealthCompon->OnHealthChange.AddDynamic(this, &ASCharacter::OnHealthChanged);
+	HealthCompon->OnHealthChanged.AddDynamic(this, &ASCharacter::OnHealthChanged);
 
 
 	if (GetLocalRole() == ROLE_Authority)
@@ -68,6 +69,19 @@ void ASCharacter::Tick(float DeltaTime)
 
 	float InterpFOV = FMath::FInterpTo(CameraComponent->FieldOfView, TargetFOV, DeltaTime, ZoomInterpSpeed);
 	CameraComponent->SetFieldOfView(InterpFOV);
+
+	if (auto* mesh = GetMesh())
+	{
+		if (mesh
+		&& IsReplicatingMovement()
+		&& (GetRemoteRole() == ROLE_AutonomousProxy && GetNetConnection() != nullptr))
+		{
+			if (HasAnyRootMotion())
+				mesh->bOnlyAllowAutonomousTickPose = true;
+			else
+				mesh->bOnlyAllowAutonomousTickPose = false;
+		}
+	}
 }
 
 // Called to bind functionality to input
@@ -116,6 +130,14 @@ void ASCharacter::StopFire()
 		PlayerWeapon->StopFire();
 }
 
+void ASCharacter::PossessedBy(AController* NewController)
+{
+	
+	Super::PossessedBy(NewController);
+	GetMesh()->bOnlyAllowAutonomousTickPose = false;
+}
+
+
 FVector ASCharacter::GetPawnViewLocation() const
 {
 	if (CameraComponent)
@@ -124,7 +146,7 @@ FVector ASCharacter::GetPawnViewLocation() const
 	return Super::GetPawnViewLocation();
 }
 
-void ASCharacter::OnHealthChanged(USHealthComponent* HealthComponent, float Health, float HealthDelta,
+void ASCharacter::OnHealthChanged(USHealthComponent* OwningHealthComp, float Health, float HealthDelta,
                                   const UDamageType* DamageType, AController* InstigatedBy, AActor* DamageCauser)
 {
 	if (Health <= 0.0f && !bDied)
@@ -134,7 +156,10 @@ void ASCharacter::OnHealthChanged(USHealthComponent* HealthComponent, float Heal
 		GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 
 		DetachFromControllerPendingDestroy();
+		
 		SetLifeSpan(10.0f);
+	
+		
 	}
 }
 
@@ -154,4 +179,5 @@ void ASCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifet
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 	DOREPLIFETIME(ASCharacter, PlayerWeapon);
+	DOREPLIFETIME(ASCharacter, bDied);
 }

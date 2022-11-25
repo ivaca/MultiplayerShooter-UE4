@@ -10,7 +10,7 @@
 #include "Particles/ParticleSystem.h"
 #include "PhysicalMaterials/PhysicalMaterial.h"
 
-
+DEFINE_LOG_CATEGORY(WeaponLog);
 int32 DebugWeaponDrawing = 0;
 FAutoConsoleVariableRef CVarDebugWeaponDrawing(TEXT("COOP.DebugWeapons"), DebugWeaponDrawing,
                                                TEXT("Draw debug lines for weapons."), ECVF_Cheat);
@@ -24,7 +24,7 @@ ASWeapon::ASWeapon()
 	MeshComponent = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("MeshComponent"));
 	RootComponent = MeshComponent;
 
-	MuzzleSocketName = "MuzzleSocket";
+	MuzzleSocketName = "MuzzleFlashSocket";
 
 	BaseDamage = 20.0f;
 	HeadshotDamageModifier = 2.5f;
@@ -34,8 +34,7 @@ ASWeapon::ASWeapon()
 	BulletSpreadInterpSpeed = 1.0f;
 
 	SetReplicates(true);
-	NetUpdateFrequency = 64.0f;
-	NetUpdateFrequency = 40.0f;
+
 }
 
 
@@ -44,6 +43,7 @@ void ASWeapon::Fire()
 	if (GetLocalRole() < ROLE_Authority)
 	{
 		ServerFire();
+		return;
 	}
 	AActor* MyOwner = GetOwner();
 	if (!MyOwner) return;
@@ -53,12 +53,15 @@ void ASWeapon::Fire()
 	MyOwner->GetActorEyesViewPoint(EyeLocation, EyeRotation);
 
 	const auto HalfRad = FMath::DegreesToRadians(CurrentBulletSpread);
-	const FVector HitSpread = FMath::VRandCone(EyeRotation.Vector(), HalfRad);
-
-	FVector TraceEnd = EyeLocation + HitSpread * 10000;
-	UE_LOG(LogTemp, Warning, TEXT("Vector is: %s"), *EyeRotation.Vector().ToString());
 
 	FVector ShotDir = EyeRotation.Vector();
+
+
+	HitSpread = FMath::VRandCone(ShotDir, HalfRad);
+
+
+	FVector TraceEnd = EyeLocation + HitSpread * 10000;
+
 
 	FCollisionQueryParams QueryParams;
 	QueryParams.AddIgnoredActor(this);
@@ -98,10 +101,14 @@ void ASWeapon::Fire()
 		{
 			HitScanTrace.TraceEnd = TraceEnd;
 			HitScanTrace.SurfaceType = SurfaceType;
+			
 		}
 	}
-	CurrentBulletSpread = FMath::FInterpTo(CurrentBulletSpread, BulletSpread, GetWorld()->DeltaTimeSeconds,
-	                                       BulletSpreadInterpSpeed);
+	if (GetLocalRole() == ROLE_Authority)
+	{
+		CurrentBulletSpread = FMath::FInterpTo(CurrentBulletSpread, BulletSpread, GetWorld()->DeltaTimeSeconds,
+		                                       BulletSpreadInterpSpeed);
+	}
 }
 
 void ASWeapon::PlayImpactEffects(EPhysicalSurface SurfaceType, FVector ImpactPoint)
@@ -129,6 +136,7 @@ void ASWeapon::PlayImpactEffects(EPhysicalSurface SurfaceType, FVector ImpactPoi
 
 void ASWeapon::OnRep_HitScanTrace()
 {
+	UE_LOG(WeaponLog, Warning, TEXT("QQQWE"));
 	PlayFireEffects();
 	PlayImpactEffects(HitScanTrace.SurfaceType, HitScanTrace.TraceEnd);
 }
@@ -136,6 +144,11 @@ void ASWeapon::OnRep_HitScanTrace()
 void ASWeapon::ServerFire_Implementation()
 {
 	Fire();
+}
+
+void ASWeapon::ServerStopFire_Implementation()
+{
+	StopFire();
 }
 
 bool ASWeapon::ServerFire_Validate()
@@ -146,7 +159,9 @@ bool ASWeapon::ServerFire_Validate()
 void ASWeapon::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
-	DOREPLIFETIME_CONDITION(ASWeapon, HitScanTrace, COND_SkipOwner);
+	DOREPLIFETIME(ASWeapon, HitScanTrace);
+	DOREPLIFETIME(ASWeapon, HitSpread);
+	DOREPLIFETIME(ASWeapon, CurrentBulletSpread);
 }
 
 
@@ -158,7 +173,12 @@ void ASWeapon::StartFire()
 void ASWeapon::StopFire()
 {
 	GetWorldTimerManager().ClearTimer(TH_AutomaticFireTimer);
-	CurrentBulletSpread = 0.0f;
+	if (GetLocalRole() == ROLE_Authority)
+		CurrentBulletSpread = 0.0f;
+	else
+	{
+		ServerStopFire();
+	}
 }
 
 void ASWeapon::PlayFireEffects()

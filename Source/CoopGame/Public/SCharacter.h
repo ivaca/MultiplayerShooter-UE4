@@ -41,7 +41,7 @@ protected:
 	UPROPERTY(Replicated)
 	ASWeapon* PlayerWeapon;
 
-	
+
 	bool bWantsToZoom;
 
 	UPROPERTY(EditDefaultsOnly, Category="Player")
@@ -52,14 +52,13 @@ protected:
 
 	float DefaultFOV;
 
-	
 
 	UFUNCTION()
-	void OnHealthChanged(class USHealthComponent* HealthComponent, float Health, float
+	void OnHealthChanged(class USHealthComponent* OwningHealthComp, float Health, float
 	                     HealthDelta, const class UDamageType* DamageType,
 	                     class AController* InstigatedBy, AActor* DamageCauser);
-	
-	UPROPERTY(BlueprintReadOnly, Category="Player")
+
+	UPROPERTY(Replicated, BlueprintReadOnly, Category="Player")
 	bool bDied;
 
 
@@ -68,11 +67,13 @@ protected:
 
 	void EndADS();
 	void BeginADS();
-	
+
 	void StartFire();
 	void StopFire();
 
-	
+	//Jitter fix for server
+	virtual void PossessedBy(AController* NewController) override;
+
 public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
