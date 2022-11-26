@@ -136,7 +136,6 @@ void ASWeapon::PlayImpactEffects(EPhysicalSurface SurfaceType, FVector ImpactPoi
 
 void ASWeapon::OnRep_HitScanTrace()
 {
-	UE_LOG(WeaponLog, Warning, TEXT("QQQWE"));
 	PlayFireEffects();
 	PlayImpactEffects(HitScanTrace.SurfaceType, HitScanTrace.TraceEnd);
 }
